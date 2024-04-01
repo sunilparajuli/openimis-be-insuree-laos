@@ -49,6 +49,9 @@ class PrintPdfSlipView(APIView,PDFTemplateView):
         # 'margin-top': 3,
         'orientation': 'Portrait',
         'page-size': 'A4',
+        "disable-smart-shrinking":None,
+'no-outline':None,
+'encoding': "UTF-8",
         "quiet" : False,
     }
 
