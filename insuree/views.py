@@ -34,12 +34,7 @@ def render_to_pdf(template_src, context_dict={}):
     return None
 
 
-def print_membership(request, family_uuid, **kwargs):
-    context = {}
-    pdf = render_to_pdf("membership.html", context)
-    return HttpResponse(pdf, content_type="application/pdf")
-    # return render(request, 'final_invoice.html',context)
-    return HttpResponse("Invalid invoice Type", status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class PrintPdfSlipView(APIView, PDFTemplateView):
@@ -49,11 +44,10 @@ class PrintPdfSlipView(APIView, PDFTemplateView):
         # 'margin-top': 3,
         "orientation": "Portrait",
         "page-size": "A4",
-        "disable-smart-shrinking": None,
         "no-outline": None,
         "encoding": "UTF-8",
         "enable-local-file-access": None,
-        "quiet": False,
+        "quiet": True,
     }
 
     @method_decorator(csrf_exempt)
@@ -79,7 +73,7 @@ class PrintPdfSlipView(APIView, PDFTemplateView):
             context = {
                 "insurees": insuree_families,
                 "insuree": insuree,
-                "multiples": [1, 2],
+                "multiples": [1, 2] if insuree_families.count() <=12 else [1,2],
                 "chfid_array": chfid_array,
             }
         else:
