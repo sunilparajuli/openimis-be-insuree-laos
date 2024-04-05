@@ -21,6 +21,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticate
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
+from location.models import Location
 
 
 def render_to_pdf(template_src, context_dict={}):
@@ -106,6 +107,7 @@ from django.db import connection
 import xlsxwriter
 
 
+
 def query_to_excel_download_helper(query, custom_header=None, filename=None):
     output = io.BytesIO()
     cursor = connection.cursor()
@@ -157,15 +159,115 @@ def query_to_excel_download_helper(query, custom_header=None, filename=None):
 
 
 from django.core.exceptions import PermissionDenied
+from .models import Insuree
 
 
 @api_view(["GET"])
 def InsureeToExcelExport(request):
+    print("request", request.GET)
+
+    # Extracting all parameters from the URL
+    parent_location_params = [
+        value
+        for key, value in request.GET.items()
+        if key.startswith("parent_location_")
+    ]
+    chfid = request.GET.get("chfid")
+    last_name = request.GET.get("last_name")
+    given_name = request.GET.get("given_name")
+    gender = request.GET.get("gender")
+    """
+    # Initialize a queryset with all Insuree objects
+    insuree_queryset = Insuree.objects.all()
+
+    # Apply filters based on parameters
+    if parent_location_params:
+        # Filter based on parent locations
+        for index, location_id in enumerate(parent_location_params):
+            print("locationid", location_id)
+            _location = Location.objects.filter(uuid=location_id).first()
+            print("_location", _location)
+            insuree_queryset = insuree_queryset.filter(family__location__id=_location.id)
+
+    if chfid:
+        # Filter based on chfid
+        insuree_queryset = insuree_queryset.filter(chf_id=chfid)
+
+    if last_name:
+        # Filter based on last_name
+        insuree_queryset = insuree_queryset.filter(last_name=last_name)
+
+    if given_name:
+        # Filter based on given_name
+        insuree_queryset = insuree_queryset.filter(other_names=given_name)
+
+    if gender:
+        # Filter based on gender
+        insuree_queryset = insuree_queryset.filter(gender=gender)
+
+    queryset_string = str(insuree_queryset.query)
+    print("query", insuree_queryset.query)
+    """
+
+    # Assuming `parent_location_params` is a list of UUID strings
+    parent_location_filters = " OR ".join(
+        [
+            f'("tblLocations"."LocationUUID" = \'{location_id}\')'
+            for location_id in parent_location_params
+        ]
+    )
+
+    # Assuming `chfid`, `last_name`, `given_name`, and `gender` are provided as string values
+    chfid_filter = f'("tblInsuree"."CHFID" = \'{chfid}\')' if chfid else ""
+    last_name_filter = (
+        f'("tblInsuree"."LastName" = \'{last_name}\')' if last_name else ""
+    )
+    given_name_filter = (
+        f'("tblInsuree"."OtherNames" = \'{given_name}\')' if given_name else ""
+    )
+    gender_filter = f'("tblInsuree"."Gender" = \'{gender}\')' if gender else ""
+
+    # Concatenate all filters
+    filters = [
+        filter
+        for filter in [
+            parent_location_filters,
+            chfid_filter,
+            last_name_filter,
+            given_name_filter,
+            gender_filter,
+        ]
+        if filter
+    ]
+    where_clause = " AND ".join(filters) if filters else "1=1"
+
+    # Construct the SQL query
+    sql_query = f"""
+        SELECT 
+            "tblInsuree"."CHFID",
+            "tblInsuree"."LastName",
+            "tblInsuree"."OtherNames", 
+            "tblInsuree"."Gender", 
+            "tblInsuree"."Email", 
+            "tblInsuree"."Phone", 
+            CAST("tblInsuree"."DOB" AS DATE),
+            "tblInsuree"."status"
+        FROM 
+            "tblInsuree"
+        INNER JOIN 
+            "tblFamilies" ON "tblInsuree"."FamilyID" = "tblFamilies"."FamilyID"
+        INNER JOIN 
+            "tblLocations" ON "tblFamilies"."LocationId" = "tblLocations"."LocationId"
+        WHERE 
+            {where_clause} 
+            AND "tblInsuree"."ValidityTo" IS NULL;
+    """
+
+    print(sql_query)
     if not request.user:
         raise PermissionDenied(_("unauthorized"))
-    filters = request.GET.get("")
-    query_string = """
-                     SELECT * FROM public."tblInsuree" LIMIT 1000;   
+    query_string = f"""
+                     {sql_query}
                    """
     return query_to_excel_download_helper(query_string)
     # print('request.get', request.GET)
