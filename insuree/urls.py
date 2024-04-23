@@ -4,6 +4,7 @@ from django.urls import path, include
 urlpatterns = [
     # path('insuree/family/<family_uuid>', print_membership),
     path('insuree/family/<family_uuid>/<type>', PrintPdfSlipView.as_view(), name="membership"),
-    path('insuree/report/excel-export', InsureeToExcelExport, name="InsureeToExcelExport")
-    
+    path('insuree/report/excel-export', InsureeToExcelExport, name="InsureeToExcelExport"),
+    path('claim/report/excel-export', claimToExcelExport, name="claimToExcelExport")
 ]
+

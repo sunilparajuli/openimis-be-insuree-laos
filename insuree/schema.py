@@ -59,6 +59,65 @@ class FamiliesConnectionField(OrderedDjangoFilterConnectionField):
         return OrderedDjangoFilterConnectionField.orderBy(qs, args)
 
 
+def createInsureeInteroperability(chfid):
+    from insuree.models import Insuree, Family, InsureePolicy
+    from policy.models import Policy
+    from datetime import datetime,timedelta
+    import requests
+    try:
+        # import pdb;pdb.set_trace()
+        # Set your Supabase URL and API Key
+        supabase_url = 'https://jqglqrprytirczvpotug.supabase.co'
+        supabase_api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxZ2xxcnByeXRpcmN6dnBvdHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjE5NTA0OTYsImV4cCI6MTk3NzUyNjQ5Nn0.t8s2oJm-eqXxRDiyl8Pe66gWY7CwZdlhLx8q5_OM1kI'
+
+        # Example endpoint to fetch data from a table
+        endpoint = f'{supabase_url}/rest/v1/insurees'
+
+        # Set headers with the API Key
+        headers = {
+            'apikey': supabase_api_key,
+            'Content-Type': 'application/json',
+        }
+
+        # Make a GET request to fetch data from Supabase API
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()  # Raise exception for any HTTP error (e.g., 404, 500)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            insurees = response.json()
+            for insuree_data in insurees:
+                insurance_id = insuree_data.get('Insurance_no')
+                if chfid == insurance_id:
+                    # import pdb;pdb.set_trace()
+                    # Create Insuree and Family objects
+
+                    insuree = Insuree.objects.create(
+                        other_names=insuree_data['first_name'],  # Replace with appropriate fields from the JSON
+                        last_name=insuree_data['last_name'],
+                        chfid=insuree_data['Insurance_no'],
+                        family=family,
+                        chf_id=chfid
+                        # Add other fields as needed
+                    )
+                    family = Family.objects.create(
+                        head_insuree=insuree, #True if insuree_data.get('head') else False,
+                        audit_user_id=-1
+                    )                    
+                    InsureePolicy.objects.create(
+                        insuree=insuree,
+                        policy=Policy.objects.first(),
+                        enrollment_date=datetime.now().date(),
+                        start_date=datetime.now().date(),
+                        effective_date=datetime.now().date(),
+                        expiry_date=datetime.now().date()+timedelta(days=365),
+                        audit_user_id=-1
+                        # Add other fields as needed
+                    )
+    except requests.RequestException as e:
+        print("Error fetching data from the API:", e)
+    return False
+
 class Query(ExportableQueryMixin, graphene.ObjectType):
     exportable_fields = ['insurees']
 
@@ -89,6 +148,7 @@ class Query(ExportableQueryMixin, graphene.ObjectType):
         InsureeStatusReasonGQLType,
         str=graphene.String()
     )
+
     families = FamiliesConnectionField(
         FamilyGQLType,
         null_as_false_poverty=graphene.Boolean(),
@@ -162,38 +222,43 @@ class Query(ExportableQueryMixin, graphene.ObjectType):
         filters = []
         additional_filter = kwargs.get('additional_filters', None)
         chf_id = kwargs.get('chf_id')
-        if chf_id is not None:
+        insuree = Insuree.objects.filter(chf_id=chf_id, validity_to=None).first()
+        if False and not insuree:
+            createInsureeInteroperability(chf_id)
             filters.append(Q(chf_id=chf_id))
-        if additional_filter:
-            filters_from_signal = _insuree_insuree_additional_filters(
-                sender=self, additional_filter=additional_filter, user=info.context.user
-            )
-            filters.extend(filters_from_signal)
-        show_history = kwargs.get('show_history', False)
-        if not show_history and not kwargs.get('uuid', None):
-            filters += filter_validity(**kwargs)
-        client_mutation_id = kwargs.get("client_mutation_id", None)
-        if client_mutation_id:
-            filters.append(
-                Q(mutations__mutation__client_mutation_id=client_mutation_id))
-        parent_location = kwargs.get('parent_location')
-        if parent_location is not None:
-            parent_location_level = kwargs.get('parent_location_level')
-            if parent_location_level is None:
-                raise ValueError(
-                    "Missing parentLocationLevel argument when filtering on parentLocation")
-            f = "uuid"
-            for i in range(len(LocationConfig.location_types) - parent_location_level - 1):
-                f = "parent__" + f
-            current_village = "current_village__" + f
-            family_location = "family__location__" + f
-            filters += [(Q(current_village__isnull=False) & Q(**{current_village: parent_location})) |
-                        (Q(current_village__isnull=True) & Q(**{family_location: parent_location}))]
+        else:
+            if chf_id is not None:
+                filters.append(Q(chf_id=chf_id))
+            if additional_filter:
+                filters_from_signal = _insuree_insuree_additional_filters(
+                    sender=self, additional_filter=additional_filter, user=info.context.user
+                )
+                filters.extend(filters_from_signal)
+            show_history = kwargs.get('show_history', False)
+            if not show_history and not kwargs.get('uuid', None):
+                filters += filter_validity(**kwargs)
+            client_mutation_id = kwargs.get("client_mutation_id", None)
+            if client_mutation_id:
+                filters.append(
+                    Q(mutations__mutation__client_mutation_id=client_mutation_id))
+            parent_location = kwargs.get('parent_location')
+            if parent_location is not None:
+                parent_location_level = kwargs.get('parent_location_level')
+                if parent_location_level is None:
+                    raise ValueError(
+                        "Missing parentLocationLevel argument when filtering on parentLocation")
+                f = "uuid"
+                for i in range(len(LocationConfig.location_types) - parent_location_level - 1):
+                    f = "parent__" + f
+                current_village = "current_village__" + f
+                family_location = "family__location__" + f
+                filters += [(Q(current_village__isnull=False) & Q(**{current_village: parent_location})) |
+                            (Q(current_village__isnull=True) & Q(**{family_location: parent_location}))]
 
-        if not info.context.user._u.is_imis_admin and (kwargs.get('ignore_location') == False or kwargs.get('ignore_location') is None):
-            # Limit the list by the logged in user location mapping
-            filters += [Q(LocationManager().build_user_location_filter_query(info.context.user._u, prefix='current_village__parent__parent', loc_types=['D']) |
-                        LocationManager().build_user_location_filter_query(info.context.user._u, prefix='family__location__parent__parent', loc_types=['D']))]
+            if not info.context.user._u.is_imis_admin and (kwargs.get('ignore_location') == False or kwargs.get('ignore_location') is None):
+                # Limit the list by the logged in user location mapping
+                filters += [Q(LocationManager().build_user_location_filter_query(info.context.user._u, prefix='current_village__parent__parent', loc_types=['D']) |
+                            LocationManager().build_user_location_filter_query(info.context.user._u, prefix='family__location__parent__parent', loc_types=['D']))]
 
         return gql_optimizer.query(Insuree.objects.filter(*filters).all(), info)
 
@@ -332,6 +397,7 @@ class Mutation(graphene.ObjectType):
     remove_insurees = RemoveInsureesMutation.Field()
     set_family_head = SetFamilyHeadMutation.Field()
     change_insuree_family = ChangeInsureeFamilyMutation.Field()
+    upload_excel = UploadExcel.Field()
 
 
 def on_family_mutation(kwargs, k='uuid'):

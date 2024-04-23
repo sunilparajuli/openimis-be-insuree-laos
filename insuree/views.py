@@ -117,7 +117,7 @@ def query_to_excel_download_helper(query, custom_header=None, filename=None):
 
     # Create style for cells
     header_cell_format = workbook.add_format(
-        {"bold": True, "border": True, "bg_color": "yellow"}
+        {"bold": True, "border": True}
     )
     body_cell_format = workbook.add_format({"border": True})
 
@@ -154,6 +154,150 @@ def query_to_excel_download_helper(query, custom_header=None, filename=None):
 
 from django.core.exceptions import PermissionDenied
 from .models import Insuree
+from claim.models import Claim
+import pandas as pd
+import io 
+
+
+def stringify_querset(qs):
+    sql, params = qs.query.sql_with_params()
+    with connection.cursor() as cursor:
+        return cursor.mogrify(sql, params)
+
+
+
+@api_view(["GET"])
+def claimToExcelExport(request):
+    
+    cleaned_get_params = {key: value[0] if isinstance(value, list) and len(value) == 1 else value for key, value in request.GET.items()}
+  
+    fields_to_select_claim = [
+        "code",
+        "validity_from",
+        "validity_to",
+        "claimed",
+        "approved",
+        "date_claimed",
+        "status"
+        # Add more field names from the Claim model as needed
+    ]
+
+    fields_to_select_insuree= [
+        "insuree__chf_id",
+        "insuree__other_names",
+        "insuree__last_name"
+        # Add more field names from the Claim model as needed
+    ]
+    
+    
+    # Specify the fields you want to retrieve from the related models
+    
+    fields_to_select_hf = [
+        "health_facility__name",
+        # Add more field names from the related model as needed
+    ]  
+    claim = Claim.objects.\
+        filter(**cleaned_get_params, validity_to=None)\
+        .values(*fields_to_select_claim, * fields_to_select_insuree, *fields_to_select_hf)
+    
+    print(claim.query.__str__())
+    k = stringify_querset(claim)
+    return query_to_excel_download_helper(k)
+    # Fetch data from the queryset
+    claim_data = list(claim.values())  # Convert queryset to list of dictionaries
+    
+    # Convert data to DataFrame
+    df = pd.DataFrame(claim_data)
+    
+    # Convert DataFrame to Excel
+    excel_buffer = io.BytesIO()  # Create a file-like object
+    df.to_excel(excel_buffer, index=False)  # Write DataFrame to the file-like object
+    
+    # Prepare HttpResponse with Excel content for download
+    excel_buffer.seek(0)  # Move the cursor to the start of the buffer
+    response = HttpResponse(excel_buffer.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="claim_data.xlsx"'
+    
+    return response
+    cleaned_get_params = {key: value[0] if isinstance(value, list) and len(value) == 1 else value for key, value in request.GET.items()}
+    claim = Claim.objects.filter(**cleaned_get_params)
+    print("claimn", str((claim.query)))
+
+    return query_to_excel_download_helper(str(claim.query))
+    # Extracting all parameters from the URL
+    parent_location_params = [
+        value
+        for key, value in request.GET.items()
+        if key.startswith("parent_location_")
+    ]
+    chfid = request.GET.get("chfid")
+    last_name = request.GET.get("last_name")
+    given_name = request.GET.get("given_name")
+    gender = request.GET.get("gender")
+   
+
+    # Assuming `parent_location_params` is a list of UUID strings
+    parent_location_filters = " OR ".join(
+        [
+            f'("tblLocations"."LocationUUID" = \'{location_id}\')'
+            for location_id in parent_location_params
+        ]
+    )
+
+    # Assuming `chfid`, `last_name`, `given_name`, and `gender` are provided as string values
+    chfid_filter = f'("tblInsuree"."CHFID" = \'{chfid}\')' if chfid else ""
+    last_name_filter = (
+        f'("tblInsuree"."LastName" = \'{last_name}\')' if last_name else ""
+    )
+    given_name_filter = (
+        f'("tblInsuree"."OtherNames" = \'{given_name}\')' if given_name else ""
+    )
+    gender_filter = f'("tblInsuree"."Gender" = \'{gender}\')' if gender else ""
+
+    # Concatenate all filters
+    filters = [
+        filter
+        for filter in [
+            parent_location_filters,
+            chfid_filter,
+            last_name_filter,
+            given_name_filter,
+            gender_filter,
+        ]
+        if filter
+    ]
+    where_clause = " AND ".join(filters) if filters else "1=1"
+
+    # Construct the SQL query
+    sql_query = f"""
+        SELECT 
+            "tblInsuree"."CHFID",
+            "tblInsuree"."LastName",
+            "tblInsuree"."OtherNames", 
+            "tblInsuree"."Gender", 
+            "tblInsuree"."Email", 
+            "tblInsuree"."Phone", 
+            CAST("tblInsuree"."DOB" AS DATE),
+            "tblInsuree"."status"
+        FROM 
+            "tblInsuree"
+        INNER JOIN 
+            "tblFamilies" ON "tblInsuree"."FamilyID" = "tblFamilies"."FamilyID"
+        INNER JOIN 
+            "tblLocations" ON "tblFamilies"."LocationId" = "tblLocations"."LocationId"
+        WHERE 
+            {where_clause} 
+            AND "tblInsuree"."ValidityTo" IS NULL;
+    """
+
+    print(sql_query)
+    # if not request.user:
+    #     raise PermissionDenied(_("unauthorized"))
+    query_string = f"""
+                     {sql_query}
+                   """
+    return query_to_excel_download_helper(query_string)
+
 
 
 @api_view(["GET"])
@@ -365,11 +509,12 @@ def InsureeToExcelExport(request):
         query_string = f""" 
               SELECT 
               tblclaim.ClaimCode, 
+              tblclaim.Claimed as Claimed,
               CONCAT(
                 tblinsuree.OtherNames, ' ', tblInsuree.LastName
               ) as Insuree, 
               tblInsuree.CHFID,
-              CONCAT(tblclaim.DateClaimed, '.') as DateClaimed, 
+              SELECT CONCAT(CAST(tblclaim.DateClaimed AS VARCHAR), '.') AS DateClaimed
               tblProduct.ProductName, 
               tblhf.HFName, 
               case when tblClaim.ClaimStatus=1 then 'Rejected'
@@ -471,27 +616,6 @@ def InsureeToExcelExport(request):
         return query_to_excel_download_helper(query_string)
     except Exception:
         print(traceback.format_exc())
-    # for row in rows:
-    #     data = (
-    #         row.code,
-    #         row.insuree.chf_id if row.insuree else "No Insuree found",
-    #         row.insuree.other_names +' '+row.insuree.last_name if row.insuree else "No Insuree found",
-    #         "No Scheme" if not row.product else row.product.name,
-    #         "No Sub Scheme" if not row.subProduct else row.subProduct.sch_name_eng,
-    #         row.date_claimed.strftime('%Y-%m-%d') if row.date_claimed else "",
-    #         row.claimed,
-    #         row.approved,
-    #         statuses.get(row.status,"null"),
-    #         payment_statuses.get(row.payment_status,"Booked") if row.status != 1 else "Reversed",
-    #         row.payment_date.strftime('%Y-%m-%d') if row.payment_date else "",
-    #         row.payment_remarks
-    #         )
-    #     l.append(data)
-    # print('l____query', l)
-    # for row in l:
-    #     row_num += 1
-    #     for col_num in range(len(row)):
-    #         ws.write(row_num, col_num, row[col_num], font_style)
 
-    # wb.save(response)
-    # return response
+
+

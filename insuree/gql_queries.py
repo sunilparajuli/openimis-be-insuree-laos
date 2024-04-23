@@ -108,6 +108,41 @@ class InsureeGQLType(DjangoObjectType):
     age = graphene.Int(source='age')
     client_mutation_id = graphene.String()
     photo = PhotoGQLType()
+    insuree_sso = graphene.Boolean()
+    
+    def resolve_insuree_sso(self, info):
+        import requests
+        import os
+        try:
+            # Set your Supabase URL and API Key
+            supabase_url = 'https://jqglqrprytirczvpotug.supabase.co'
+            supabase_api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpxZ2xxcnByeXRpcmN6dnBvdHVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjE5NTA0OTYsImV4cCI6MTk3NzUyNjQ5Nn0.t8s2oJm-eqXxRDiyl8Pe66gWY7CwZdlhLx8q5_OM1kI'
+
+            # Example endpoint to fetch data from a table
+            endpoint = f'{supabase_url}/rest/v1/sso'
+
+            # Set headers with the API Key
+            headers = {
+                'apikey': supabase_api_key,
+                'Content-Type': 'application/json',
+            }
+
+            # Make a GET request to fetch data from Supabase API
+            response = requests.get(endpoint, headers=headers)
+            response.raise_for_status()  # Raise exception for any HTTP error (e.g., 404, 500)
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                insurees = response.json()
+                # Check if self.chf_id matches any insurance ID in the insurees list
+                for insuree in insurees:
+                    if self.chf_id == insuree.get('Insurance_id'):
+                        return True  # Return True if match found
+            return False  # Return False if no match found or API response was not 200
+        except requests.RequestException as e:
+            print("Error fetching data from the API:", e)
+
+    
 
     def resolve_current_village(self, info):
         if not info.context.user.has_perms(InsureeConfig.gql_query_insuree_perms):

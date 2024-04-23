@@ -11,8 +11,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.utils.translation import gettext as _
 from graphene import InputObjectType
-from .models import Family, Insuree, FamilyMutation, InsureeMutation
-
+from .models import Family, Insuree, FamilyMutation,InsureePolicy,Family, InsureeMutation
+import pandas as pd
 logger = logging.getLogger(__name__)
 
 
@@ -148,6 +148,60 @@ class CreateFamilyMutation(OpenIMISMutation):
                 'message': _("insuree.mutation.failed_to_create_family"),
                 'detail': str(exc)}
             ]
+
+
+def process_excel(file_content):
+    try:
+        import base64
+        import pandas as pd
+        from .models import Insuree  # Import your Insuree model
+        
+        # Decode the base64 string to binary data
+        file_data = base64.b64decode(file_content)
+        
+        # Parse the Excel content
+        df = pd.read_excel(file_data)
+        
+        # Track the count of successful inserts
+        success_count = 0
+        
+        # Insert each row into the Insuree model
+        for index, row in df.iterrows():
+            try:
+                Insuree.objects.create(
+                    # Assuming column names match fields in Insuree model
+                    chf_id=row['insuree_id'],
+                    other_names=row['firstname'],
+                    last_name=row['lastname'],
+                    phone=row['mobile'],
+                    card_issued=False,
+                    audit_user_id=-1,
+                    family=Family.objects.first()#row['family']
+                )
+                success_count += 1
+            except Exception as e:
+                print(f"Error inserting row {index + 2}: {e}")  # Adding 2 because Excel index starts from 1 and skipping header row
+                continue
+        
+        return success_count
+    except Exception as e:
+        print(f"Error processing Excel content: {e}")
+        return 0
+
+
+import graphene
+
+class UploadExcel(graphene.Mutation):
+    class Arguments:
+        file = graphene.String(required=True)
+
+    success_count = graphene.Int()
+
+    @staticmethod
+    def mutate(root, info, file):
+        # Process the file and track the count of successful inserts
+        success_count =  process_excel(file)
+        return UploadExcel(success_count=success_count)
 
 
 class UpdateFamilyMutation(OpenIMISMutation):
