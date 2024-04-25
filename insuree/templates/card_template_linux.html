@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    .number-table {
+      border-collapse: collapse;
+      border-spacing: 5px;
+    }
+
+    .number-cell {
+      width: 40px;
+      /* Adjust the size of each box */
+      height: 40px;
+      /* Adjust the size of each box */
+      border: 1px solid #050505;
+      /* Border around each box */
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .border {
+      border-left: 3px dotted;
+      width: 0px;
+      margin-left: 8mm;
+      margin-right: 8mm;
+      height: 323mm;
+      float: left;
+    }
+
+
+
+    .top-scissor {
+      position: relative;
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEcAAAAxCAYAAACIy7TDAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QIXBRkZxPPf5AAABDVJREFUaN7tWm124joMvZJsB2ihHdqtzVpmLW9xs4/XfFjzI3FwTMgHTYYOVOfknFJwYt9cSVeygW/7tmAiRgHE10XjB8KlAcPDWgvnHESk/X+22ejDMcVYqwDUOae2+Tu+RESdc0pEo0y6K9vv90pEaoxRZlYAutvttI9RzKzGmIcCSEVklBX7/aFlkYjo29vbr7tGZbfbKRGpiExiw/PzszJz7Hr3zRprbWDN5DFZlrVj7jpbiQhUp2NDzKiqqh1z1+DMAQYAjDHw3k/TOVH0VgBKxP+ULxLRrN8XeQ5mHgVHAWhZliAiiAiYGaoeMVjOZV8arKqqrnLFIVDVWhtH+YQ9dQYwxihR97vj8fjf18lWT7OylWsC8VC2StXi4BUePgDmzcNOLAAvAvn0pIkm6vNRjm80+yIiZWYVkbP7OOf0RnFHmU/raoDoVcgpa2LnUmbuROslAiIzg4g6KRIAsmyDj4//aW1wRERVFaoKblJ1mqEAwHsf1k4XBVBCw8Wu8AaNMb0uuJZkTzOuiGiWZZplWWceWTZQlW/rgqy9wiLWACqmcqhnOguoF3SVNUmh/zlmXlykkf7HKec37hEoOldgjRkztxojdcF6mjp5rtZaiAiqqkJRFHPWPP+H1lpNH2KMBaCxry4u4MLlve+AJWJQVWUnbjALiICiKDrzsc6hyPOrYttVg1yWaf7xsTqrwn1DKVAzq34hIqYFrixPQDnnkF8JxiLgTHFBYYZXPXvrc5gTj4s/p98tuI51rck6n85sPcGyI07NJ4L2l7FjA9ZU1T2iZu+ylTkZnJFaKCjtfxuc8Iav0UlEpM2uQWv7w2EKs5bNmEszZKk0HgVcYmb13v/1QPypTqA9UTy4RKM5eHajqa+D14hCDZ9DOo8EYxSgrd6WOUSKJC33FG6LCkERA0Ch6lFV/kwHWWvrLl4i/pZgFs1xlVBlBzCu6dPOqeS9r+D96f7GWpRFQXE7In6+MQYiAu89qqpKwfqcC76/v/9Mg6MxRq21qxWgQz2gK7RMN6g3c08rcwD68vL6e/aNQ3dvrYo8brP2tS6Ox2VaF5v6YEArIYhOHYBUVrhspBee7BWvBkg6scPhZdW0/PL6+jsGKczDWtseLrgkDyjWJcsEVQIztdkqra2sdSiK/G/WQprGyZ5uIUQEeZ4Pxqar2DPU5Zu5HbsGMC1rUmGZKvjB0iRQcAygoSD6laT96IJ7gIzWdG4/ftRtRhHutEqDr/YBd6udhWFguN112G63U+enWR2cR39/kTmb6Q+7abE7daHxmIc5gjIXHO6GiYc6MDkOTlIP3jU4c4vfsizDCdP7BoeZkTdHSna7J50z7iGsVubTU3mywXj/J7uITn2h7XanQyo62ksnPIid7YvjrKkvvSn8URDSuN8Tn7qoez8e3j8WYzrWtEKGyqJv+7aF7A9ON3FmIFO9zgAAAABJRU5ErkJggg==);
+      width: 27px;
+      height: 27px;
+      background-size: 27px 27px;
+      /* resize: auto; */
+      margin-left: -12mm;
+      margin-top: 20mm;
+      transform: rotateZ(0deg);
+    }
+
+    .bottom-scissor {
+      position: relative;
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEcAAAAxCAYAAACIy7TDAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QIXBRkZxPPf5AAABDVJREFUaN7tWm124joMvZJsB2ihHdqtzVpmLW9xs4/XfFjzI3FwTMgHTYYOVOfknFJwYt9cSVeygW/7tmAiRgHE10XjB8KlAcPDWgvnHESk/X+22ejDMcVYqwDUOae2+Tu+RESdc0pEo0y6K9vv90pEaoxRZlYAutvttI9RzKzGmIcCSEVklBX7/aFlkYjo29vbr7tGZbfbKRGpiExiw/PzszJz7Hr3zRprbWDN5DFZlrVj7jpbiQhUp2NDzKiqqh1z1+DMAQYAjDHw3k/TOVH0VgBKxP+ULxLRrN8XeQ5mHgVHAWhZliAiiAiYGaoeMVjOZV8arKqqrnLFIVDVWhtH+YQ9dQYwxihR97vj8fjf18lWT7OylWsC8VC2StXi4BUePgDmzcNOLAAvAvn0pIkm6vNRjm80+yIiZWYVkbP7OOf0RnFHmU/raoDoVcgpa2LnUmbuROslAiIzg4g6KRIAsmyDj4//aW1wRERVFaoKblJ1mqEAwHsf1k4XBVBCw8Wu8AaNMb0uuJZkTzOuiGiWZZplWWceWTZQlW/rgqy9wiLWACqmcqhnOguoF3SVNUmh/zlmXlykkf7HKec37hEoOldgjRkztxojdcF6mjp5rtZaiAiqqkJRFHPWPP+H1lpNH2KMBaCxry4u4MLlve+AJWJQVWUnbjALiICiKDrzsc6hyPOrYttVg1yWaf7xsTqrwn1DKVAzq34hIqYFrixPQDnnkF8JxiLgTHFBYYZXPXvrc5gTj4s/p98tuI51rck6n85sPcGyI07NJ4L2l7FjA9ZU1T2iZu+ylTkZnJFaKCjtfxuc8Iav0UlEpM2uQWv7w2EKs5bNmEszZKk0HgVcYmb13v/1QPypTqA9UTy4RKM5eHajqa+D14hCDZ9DOo8EYxSgrd6WOUSKJC33FG6LCkERA0Ch6lFV/kwHWWvrLl4i/pZgFs1xlVBlBzCu6dPOqeS9r+D96f7GWpRFQXE7In6+MQYiAu89qqpKwfqcC76/v/9Mg6MxRq21qxWgQz2gK7RMN6g3c08rcwD68vL6e/aNQ3dvrYo8brP2tS6Ox2VaF5v6YEArIYhOHYBUVrhspBee7BWvBkg6scPhZdW0/PL6+jsGKczDWtseLrgkDyjWJcsEVQIztdkqra2sdSiK/G/WQprGyZ5uIUQEeZ4Pxqar2DPU5Zu5HbsGMC1rUmGZKvjB0iRQcAygoSD6laT96IJ7gIzWdG4/ftRtRhHutEqDr/YBd6udhWFguN112G63U+enWR2cR39/kTmb6Q+7abE7daHxmIc5gjIXHO6GiYc6MDkOTlIP3jU4c4vfsizDCdP7BoeZkTdHSna7J50z7iGsVubTU3mywXj/J7uITn2h7XanQyo62ksnPIid7YvjrKkvvSn8URDSuN8Tn7qoez8e3j8WYzrWtEKGyqJv+7aF7A9ON3FmIFO9zgAAAABJRU5ErkJggg==);
+      width: 27px;
+      height: 27px;
+      background-size: 27px 27px;
+      /* resize: auto; */
+      margin-left: -12mm;
+      margin-top: 290mm;
+      transform: rotateZ(0deg);
+    }
+
+    .finger {
+      width: 170px;
+      height: 200px;
+      border: 2px solid;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+    }
+
+    .column1 {
+      width: 10%;
+    }
+
+    .column2 {
+      width: 50%;
+    }
+
+    .column3 {
+      width: 40%;
+    }
+
+    .column21 {
+      width: 33%;
+    }
+
+    .column22 {
+      width: 33%;
+    }
+
+    .column23 {
+      width: 33%;
+    }
+
+    .rotated-table {
+      border-collapse: collapse;
+      border: 1px solid black;
+      -webkit-transform: rotate(90deg);
+      transform-origin: left top;
+      white-space: nowrap;
+    }
+
+    .rotated-table th,
+    .rotated-table td {
+      padding: 5px 10px;
+      border: 1px solid black;
+    }
+
+    .container {
+      display: flex;
+    }
+
+    .box {
+      width: 50px;
+      /* Adjust the size of each box */
+      height: 50px;
+      /* Adjust the size of each box */
+      background-color: #ccc;
+      /* Background color of each box */
+      text-align: center;
+      line-height: 50px;
+      /* Should be equal to height for vertical alignment */
+      margin-right: 10px;
+      /* Adjust spacing between boxes */
+    }
+
+    .table-container {
+      border: 1px solid black;
+      /* Border for the outer rectangle */
+      display: inline-block;
+      /* Make container fit the content */
+      padding: 10px;
+      /* Optional: Add padding for space between table and border */
+    }
+
+    .pink {
+      background-color: pink;
+    }
+
+    .lightgrey {
+      background-color: rgb(216, 224, 213);
+    }
+    .no-border {
+  border: 0;
+}
+  </style>
+</head>
+
+<body>
+  {% for mul in multiples %}
+
+  <div {% if forloop.counter > 1 %} style="page-break-before:always;" {% endif %} class="page">
+    <div class="table-container {% if forloop.counter == 1 %} pink {% else %} lightgrey{% endif %}">
+      <table>
+        <thead>
+
+        </thead>
+        <tbody>
+          <tr>
+            <td class="column1" style="display: inline-block; padding: 16px; width: 250px; text-align: justify; margin-right: 20px;">
+              <ol type="1">
+                <li>ยัดบี้ให้ระเพาะสะมาริกกัง 
+                  ปะกับสุระพายชุมรุม และ
+                  ยุราดับที่เมีชบ้าใบยิ้มสำมะโมคิว
+                  ลองกอบถือผู้ปะกับ ติบเทิจปั๊บ.</li>
+                <li>ปัดมี้ให้มะเพาะปิ่มปิอยี่เลย
+                  ค่ายู่โชงขัมที่ได้เลือรากำมัดไอ้ใบ
+                  (เกิดละยุรย).</li>
+                <li>ผู้ถีชัดต้องไปโชวชมที่ละยุไอ้
+                  ใบขัดเพื่อรับภาพปิ่มยือ.</li>
+                <li>ใบกละบิสุรเสิมสะมาธิก
+                  สามาถเอ้ายิ่มย์อยู่โฮๆขับสัดชี่
+                  ให้ญูงแต่ต้องแจ้งยายบ่อยงาม
+                  คปลล พายใบ 72 อิ่วโมง </li>
+                <li>ผู้ถีขัดต้องบำข้าถาม
+                  ย่ามีไปฮั้งยืบ: ยิ้มสำมะใบคือ,
+                  ปัดปะจำตือ ที้ เองะสาบยั้งยิม
+                  จารทางทาบไปพ้อม.</li>
+                <li>ยัดปี้มีอายุ มาให้ 2 ปี,แต่ติบ
+                  ภาบบำใช้บัดจะสิ้นสุดลิง ซี สิบ
+                  ตี่แม่บอิ้มภัยรามจ่ายเติบเบ้ย
+                  ปะกับลองท่าบถั้งตี่ไปก่อบมี้</li>
+              </ol>
+            </td>
+            <td style="width: 50%; margin: 0 20px 0 20px">
+              <table class="secondary-table" border="1" style="-webkit-transform: rotate(90deg);">
+                <tr>
+                  <td colspan="5" style="border: none;">openIMIS information list</td>
+                </tr>
+                <tr style="height: 24px;">
+                  <th>s.no.</th>
+                  <th>Full name</th>
+                  <th>Age</th>
+                  <th>lorem</th>
+                  <th>Desc</th>
+                </tr>
+    
+                {% for insuree in insurees|slice:"12" %}
+                <tr style="height: 20px;">
+                  <td style="text-align: center;">{{ forloop.counter }}</td>
+                  <td>{{insuree.other_names}} {{insuree.last_name}}</td>
+                  <td>1</td>
+                  <td>100</td>
+                  <td>100</td>
+                </tr>
+                {% endfor %}
+    
+
+              </table>
+            </td>
+            <td style="border: none; width: 300px">
+              <p style="text-align:center;">
+                <image src="https://release.openimis.org/front/static/media/openIMIS.f3351d9a.png" width="120px" height="100px" />
+              </p>
+              <p style="text-align: center; margin: 5px;">openImis Information</p>
+              <p style="text-align: center; margin: 5px;">Address</p>
+              <p style="text-align: center; margin: 5px;">asdfjsd</p>
+              <p style="text-align: center; margin: 5px;">openImis Information</p>
+              <p style="text-align: center; margin: 5px;">Address</p>
+              <p style="text-align: center; margin: 5px;">asdfjsd</p>
+              
+              <table class="tertiary-table">
+                <tr> 
+                  {% for arr in chfid_array %}
+                    <td style="width: 20px; text-align: center; border: 1px solid #000;">{{arr}}</td>
+                    <td style="width: 20px; text-align: center; border: none;">-</td>
+                  {% endfor %}
+                </tr>
+              </table>
+    
+              <p style="text-align: center; margin-top: 20px;">openImis Information , Family Information listed below</p>
+              <p style="text-align: center;">Address</p>
+            </td>
+          </tr>
+          <!-- Add more rows as needed -->
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 25px;"></div>
+    <!-- <div class="border" style="-webkit-transform: rotate(0deg);"></div> -->
+    <!-- <i class="glyphicon glyphicon-scissors top-scissor"></i>
+  <i class="glyphicon glyphicon-scissors bottom-scissor"></i> -->
+
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEcAAAAxCAYAAACIy7TDAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QIXBRkZxPPf5AAABDVJREFUaN7tWm124joMvZJsB2ihHdqtzVpmLW9xs4/XfFjzI3FwTMgHTYYOVOfknFJwYt9cSVeygW/7tmAiRgHE10XjB8KlAcPDWgvnHESk/X+22ejDMcVYqwDUOae2+Tu+RESdc0pEo0y6K9vv90pEaoxRZlYAutvttI9RzKzGmIcCSEVklBX7/aFlkYjo29vbr7tGZbfbKRGpiExiw/PzszJz7Hr3zRprbWDN5DFZlrVj7jpbiQhUp2NDzKiqqh1z1+DMAQYAjDHw3k/TOVH0VgBKxP+ULxLRrN8XeQ5mHgVHAWhZliAiiAiYGaoeMVjOZV8arKqqrnLFIVDVWhtH+YQ9dQYwxihR97vj8fjf18lWT7OylWsC8VC2StXi4BUePgDmzcNOLAAvAvn0pIkm6vNRjm80+yIiZWYVkbP7OOf0RnFHmU/raoDoVcgpa2LnUmbuROslAiIzg4g6KRIAsmyDj4//aW1wRERVFaoKblJ1mqEAwHsf1k4XBVBCw8Wu8AaNMb0uuJZkTzOuiGiWZZplWWceWTZQlW/rgqy9wiLWACqmcqhnOguoF3SVNUmh/zlmXlykkf7HKec37hEoOldgjRkztxojdcF6mjp5rtZaiAiqqkJRFHPWPP+H1lpNH2KMBaCxry4u4MLlve+AJWJQVWUnbjALiICiKDrzsc6hyPOrYttVg1yWaf7xsTqrwn1DKVAzq34hIqYFrixPQDnnkF8JxiLgTHFBYYZXPXvrc5gTj4s/p98tuI51rck6n85sPcGyI07NJ4L2l7FjA9ZU1T2iZu+ylTkZnJFaKCjtfxuc8Iav0UlEpM2uQWv7w2EKs5bNmEszZKk0HgVcYmb13v/1QPypTqA9UTy4RKM5eHajqa+D14hCDZ9DOo8EYxSgrd6WOUSKJC33FG6LCkERA0Ch6lFV/kwHWWvrLl4i/pZgFs1xlVBlBzCu6dPOqeS9r+D96f7GWpRFQXE7In6+MQYiAu89qqpKwfqcC76/v/9Mg6MxRq21qxWgQz2gK7RMN6g3c08rcwD68vL6e/aNQ3dvrYo8brP2tS6Ox2VaF5v6YEArIYhOHYBUVrhspBee7BWvBkg6scPhZdW0/PL6+jsGKczDWtseLrgkDyjWJcsEVQIztdkqra2sdSiK/G/WQprGyZ5uIUQEeZ4Pxqar2DPU5Zu5HbsGMC1rUmGZKvjB0iRQcAygoSD6laT96IJ7gIzWdG4/ftRtRhHutEqDr/YBd6udhWFguN112G63U+enWR2cR39/kTmb6Q+7abE7daHxmIc5gjIXHO6GiYc6MDkOTlIP3jU4c4vfsizDCdP7BoeZkTdHSna7J50z7iGsVubTU3mywXj/J7uITn2h7XanQyo62ksnPIid7YvjrKkvvSn8URDSuN8Tn7qoez8e3j8WYzrWtEKGyqJv+7aF7A9ON3FmIFO9zgAAAABJRU5ErkJggg==" width="25px" style="-webkit-transform: rotate(180deg);">
+  ...............................................................................................................................................................................................................................................................
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEcAAAAxCAYAAACIy7TDAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5QIXBRkZxPPf5AAABDVJREFUaN7tWm124joMvZJsB2ihHdqtzVpmLW9xs4/XfFjzI3FwTMgHTYYOVOfknFJwYt9cSVeygW/7tmAiRgHE10XjB8KlAcPDWgvnHESk/X+22ejDMcVYqwDUOae2+Tu+RESdc0pEo0y6K9vv90pEaoxRZlYAutvttI9RzKzGmIcCSEVklBX7/aFlkYjo29vbr7tGZbfbKRGpiExiw/PzszJz7Hr3zRprbWDN5DFZlrVj7jpbiQhUp2NDzKiqqh1z1+DMAQYAjDHw3k/TOVH0VgBKxP+ULxLRrN8XeQ5mHgVHAWhZliAiiAiYGaoeMVjOZV8arKqqrnLFIVDVWhtH+YQ9dQYwxihR97vj8fjf18lWT7OylWsC8VC2StXi4BUePgDmzcNOLAAvAvn0pIkm6vNRjm80+yIiZWYVkbP7OOf0RnFHmU/raoDoVcgpa2LnUmbuROslAiIzg4g6KRIAsmyDj4//aW1wRERVFaoKblJ1mqEAwHsf1k4XBVBCw8Wu8AaNMb0uuJZkTzOuiGiWZZplWWceWTZQlW/rgqy9wiLWACqmcqhnOguoF3SVNUmh/zlmXlykkf7HKec37hEoOldgjRkztxojdcF6mjp5rtZaiAiqqkJRFHPWPP+H1lpNH2KMBaCxry4u4MLlve+AJWJQVWUnbjALiICiKDrzsc6hyPOrYttVg1yWaf7xsTqrwn1DKVAzq34hIqYFrixPQDnnkF8JxiLgTHFBYYZXPXvrc5gTj4s/p98tuI51rck6n85sPcGyI07NJ4L2l7FjA9ZU1T2iZu+ylTkZnJFaKCjtfxuc8Iav0UlEpM2uQWv7w2EKs5bNmEszZKk0HgVcYmb13v/1QPypTqA9UTy4RKM5eHajqa+D14hCDZ9DOo8EYxSgrd6WOUSKJC33FG6LCkERA0Ch6lFV/kwHWWvrLl4i/pZgFs1xlVBlBzCu6dPOqeS9r+D96f7GWpRFQXE7In6+MQYiAu89qqpKwfqcC76/v/9Mg6MxRq21qxWgQz2gK7RMN6g3c08rcwD68vL6e/aNQ3dvrYo8brP2tS6Ox2VaF5v6YEArIYhOHYBUVrhspBee7BWvBkg6scPhZdW0/PL6+jsGKczDWtseLrgkDyjWJcsEVQIztdkqra2sdSiK/G/WQprGyZ5uIUQEeZ4Pxqar2DPU5Zu5HbsGMC1rUmGZKvjB0iRQcAygoSD6laT96IJ7gIzWdG4/ftRtRhHutEqDr/YBd6udhWFguN112G63U+enWR2cR39/kTmb6Q+7abE7daHxmIc5gjIXHO6GiYc6MDkOTlIP3jU4c4vfsizDCdP7BoeZkTdHSna7J50z7iGsVubTU3mywXj/J7uITn2h7XanQyo62ksnPIid7YvjrKkvvSn8URDSuN8Tn7qoez8e3j8WYzrWtEKGyqJv+7aF7A9ON3FmIFO9zgAAAABJRU5ErkJggg==" width="25px">
+
+  <div style="margin-top: 50px;"></div>
+    <div class="table-container {% if forloop.counter == 1 %} pink {% else %} lightgrey{% endif %}">
+      <table>
+        <thead>
+
+        </thead>
+        <tbody>
+          <tr>
+            <td class="column21">
+              <!-- Content for column 1 -->
+              <p>ถังปะกับสุระพายฉุมรุม </p>
+              Age: ...... Duration: ......
+              lorenpusm ....... lourenposum .......
+              agedasd .............................
+              Age: ...... Duration: ......
+              lorenpusm ....... lourenposum .......
+              agedasd .............................
+
+            </td>
+            <td class="column22">
+              <!-- Content for column 2 -->
+              <table style="width: 100%;" border="1">
+                <thead>
+                  <!-- <span style="-webkit-transform: rotate(90deg);">ลายอีผู้ปะกับต้บทมิยบังทำมิชบังที่ใบปี๊มสำมะโบคอย่ได้รับสิดปิ่มป้อ </span> -->
+                  <tr>
+                    <th colspan="3">2024</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            <td class="column23">
+              <!-- Content for column 2 -->
+              <table style="width: 100%;" border="1">
+                <thead>
+                  <tr>
+                    <th colspan="3">2025</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                    <td>
+                      <div style="border: solid 1px rgb(1, 1, 1); width: 100px;height: 100px; border-radius: 50%;">
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <!-- Add more rows as needed -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+    <div style="margin-top: 50px;"></div>
+  <hr style="border-top: dotted 2px;" />
+  {% endfor %}
+</body>
+
+</html>

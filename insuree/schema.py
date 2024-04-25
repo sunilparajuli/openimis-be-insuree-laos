@@ -24,6 +24,7 @@ from .gql_queries import *  # lgtm [py/polluting-import]
 from .gql_mutations import *  # lgtm [py/polluting-import]
 from .signals import signal_before_insuree_policy_query, _read_signal_results, \
     signal_before_family_query, signal_before_insuree_search_query
+from django.db import transaction
 
 
 def family_fk(arg):
@@ -86,36 +87,47 @@ def createInsureeInteroperability(chfid):
         # Check if the request was successful
         if response.status_code == 200:
             insurees = response.json()
-            for insuree_data in insurees:
-                insurance_id = insuree_data.get('Insurance_no')
-                if chfid == insurance_id:
-                    # import pdb;pdb.set_trace()
-                    # Create Insuree and Family objects
+            with transaction.atomic():
+                for insuree_data in insurees:
+                    insurance_id = insuree_data.get('insurance_no')
+                    # print("insurance_id", "insuree_data", insuree_data, insuree_data.get('Insurance_no'), "insuree_data_no",insuree_data.get('insurance_no'))
+                    if chfid == insurance_id:
+                        # import pdb;pdb.set_trace()
+                        # Create Insuree and Family objects
 
-                    insuree = Insuree.objects.create(
-                        other_names=insuree_data['first_name'],  # Replace with appropriate fields from the JSON
-                        last_name=insuree_data['last_name'],
-                        chfid=insuree_data['Insurance_no'],
-                        family=family,
-                        chf_id=chfid
-                        # Add other fields as needed
-                    )
-                    family = Family.objects.create(
-                        head_insuree=insuree, #True if insuree_data.get('head') else False,
-                        audit_user_id=-1
-                    )                    
-                    InsureePolicy.objects.create(
-                        insuree=insuree,
-                        policy=Policy.objects.first(),
-                        enrollment_date=datetime.now().date(),
-                        start_date=datetime.now().date(),
-                        effective_date=datetime.now().date(),
-                        expiry_date=datetime.now().date()+timedelta(days=365),
-                        audit_user_id=-1
-                        # Add other fields as needed
-                    )
-    except requests.RequestException as e:
-        print("Error fetching data from the API:", e)
+                        family = Family.objects.create(
+                            audit_user_id=-1,
+                            head_insuree=Insuree.objects.first()
+                        )
+                        insuree = Insuree.objects.create(
+                            other_names=insuree_data['first_name'],  # Replace with appropriate fields from the JSON
+                            last_name=insuree_data['last_name'],
+                            family=family,
+                            chf_id=chfid,
+                            audit_user_id=-1,
+                            card_issued=False
+
+
+                            # Add other fields as needed
+                        )
+                        family.head_insuree = insuree
+                        family.save()
+                        insuree.family=family
+                        insuree.save()
+                        InsureePolicy.objects.create(
+                            insuree=insuree,
+                            policy=Policy.objects.first(),
+                            enrollment_date=datetime.now().date(),
+                            start_date=datetime.now().date(),
+                            effective_date=datetime.now().date(),
+                            expiry_date=datetime.now().date()+timedelta(days=365),
+                            audit_user_id=-1
+                            # Add other fields as needed
+                        )
+                return 
+    except:
+        import traceback
+        print(traceback.format_exc())
     return False
 
 class Query(ExportableQueryMixin, graphene.ObjectType):
@@ -223,42 +235,42 @@ class Query(ExportableQueryMixin, graphene.ObjectType):
         additional_filter = kwargs.get('additional_filters', None)
         chf_id = kwargs.get('chf_id')
         insuree = Insuree.objects.filter(chf_id=chf_id, validity_to=None).first()
-        if False and not insuree:
+        if not insuree:
             createInsureeInteroperability(chf_id)
+            # filters.append(Q(chf_id=chf_id))
+    
+        if chf_id is not None:
             filters.append(Q(chf_id=chf_id))
-        else:
-            if chf_id is not None:
-                filters.append(Q(chf_id=chf_id))
-            if additional_filter:
-                filters_from_signal = _insuree_insuree_additional_filters(
-                    sender=self, additional_filter=additional_filter, user=info.context.user
-                )
-                filters.extend(filters_from_signal)
-            show_history = kwargs.get('show_history', False)
-            if not show_history and not kwargs.get('uuid', None):
-                filters += filter_validity(**kwargs)
-            client_mutation_id = kwargs.get("client_mutation_id", None)
-            if client_mutation_id:
-                filters.append(
-                    Q(mutations__mutation__client_mutation_id=client_mutation_id))
-            parent_location = kwargs.get('parent_location')
-            if parent_location is not None:
-                parent_location_level = kwargs.get('parent_location_level')
-                if parent_location_level is None:
-                    raise ValueError(
-                        "Missing parentLocationLevel argument when filtering on parentLocation")
-                f = "uuid"
-                for i in range(len(LocationConfig.location_types) - parent_location_level - 1):
-                    f = "parent__" + f
-                current_village = "current_village__" + f
-                family_location = "family__location__" + f
-                filters += [(Q(current_village__isnull=False) & Q(**{current_village: parent_location})) |
-                            (Q(current_village__isnull=True) & Q(**{family_location: parent_location}))]
+        if additional_filter:
+            filters_from_signal = _insuree_insuree_additional_filters(
+                sender=self, additional_filter=additional_filter, user=info.context.user
+            )
+            filters.extend(filters_from_signal)
+        show_history = kwargs.get('show_history', False)
+        if not show_history and not kwargs.get('uuid', None):
+            filters += filter_validity(**kwargs)
+        client_mutation_id = kwargs.get("client_mutation_id", None)
+        if client_mutation_id:
+            filters.append(
+                Q(mutations__mutation__client_mutation_id=client_mutation_id))
+        parent_location = kwargs.get('parent_location')
+        if parent_location is not None:
+            parent_location_level = kwargs.get('parent_location_level')
+            if parent_location_level is None:
+                raise ValueError(
+                    "Missing parentLocationLevel argument when filtering on parentLocation")
+            f = "uuid"
+            for i in range(len(LocationConfig.location_types) - parent_location_level - 1):
+                f = "parent__" + f
+            current_village = "current_village__" + f
+            family_location = "family__location__" + f
+            filters += [(Q(current_village__isnull=False) & Q(**{current_village: parent_location})) |
+                        (Q(current_village__isnull=True) & Q(**{family_location: parent_location}))]
 
-            if not info.context.user._u.is_imis_admin and (kwargs.get('ignore_location') == False or kwargs.get('ignore_location') is None):
-                # Limit the list by the logged in user location mapping
-                filters += [Q(LocationManager().build_user_location_filter_query(info.context.user._u, prefix='current_village__parent__parent', loc_types=['D']) |
-                            LocationManager().build_user_location_filter_query(info.context.user._u, prefix='family__location__parent__parent', loc_types=['D']))]
+        if not info.context.user._u.is_imis_admin and (kwargs.get('ignore_location') == False or kwargs.get('ignore_location') is None):
+            # Limit the list by the logged in user location mapping
+            filters += [Q(LocationManager().build_user_location_filter_query(info.context.user._u, prefix='current_village__parent__parent', loc_types=['D']) |
+                        LocationManager().build_user_location_filter_query(info.context.user._u, prefix='family__location__parent__parent', loc_types=['D']))]
 
         return gql_optimizer.query(Insuree.objects.filter(*filters).all(), info)
 

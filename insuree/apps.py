@@ -75,6 +75,33 @@ class InsureeConfig(AppConfig):
     insuree_fsp_mandatory = None
     insuree_as_worker = None
     is_insuree_photo_required = None
+    membership_slip_name = f"membershi_card" #todo, head of family name ?
+    card_print_config = {
+        "family" : 2,
+        "insuree": 1
+    }
+    wkhtml_cmd_options_for_printing = {
+        # 'margin-top': 3,
+        "orientation": "Portrait",
+        "page-size": "A4",
+        "no-outline": None,
+        "encoding": "UTF-8",
+        "enable-local-file-access": None,
+        "quiet": True,
+    }
+    @staticmethod
+    def get_os_architecture():
+        import platform
+        system = platform.system()
+        if system == "Windows":
+            template_name = "card_template_osx.html" #not tested for windows
+        elif system == "Darwin":
+            template_name = "card_template_osx.html"
+        elif system == "Linux":
+            template_name = "card_template_linux.html"
+        else:
+            return "Unknown"
+        return template_name
 
     def __load_config(self, cfg):
         for field in cfg:
